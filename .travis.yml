@@ -1,0 +1,23 @@
+language: generic # for “rakefile not found” error
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t aabv21/complex-react-test -f ./client/Dockerfile.dev ./client # path proy and build context
+
+script:
+  - docker run -e CI=true aabv21/complex-react-test npm test # Due to a change in how the Jest library works with Create React App, we need to make a small modification:
+
+after_success:
+  - docker build -t aabv21/multi-client ./client
+  - docker build -t aabv21/multi-nginx ./nginx
+  - docker build -t aabv21/multi-server ./server
+  - docker build -t aabv21/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push aabv21/multi-client
+  - docker push aabv21/multi-nginx
+  - docker push aabv21/multi-server
+  - docker push aabv21/multi-worker
